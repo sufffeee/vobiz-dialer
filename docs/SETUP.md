@@ -59,7 +59,7 @@ This guide documents the **entire end-to-end setup** for the Vobiz Dialer projec
 ### Accounts & Credentials
 - **Vobiz Account**: Console access at https://console.vobiz.ai
 - **Firebase Project**: For FCM push notifications (project: `vobiz-fire`)
-- **GitHub Account**: For repos (org: `vobizofficial-cmd`)
+- **GitHub Account**: For repos (Vobiz Org: `vobizofficial-cmd`, Personal: `sufffeee`)
 - **Railway Account**: For backend hosting
 
 ### Local Development
@@ -71,11 +71,17 @@ This guide documents the **entire end-to-end setup** for the Vobiz Dialer projec
 
 ### Repositories
 ```bash
-# Android App
+# Android App (Vobiz Official)
 git clone https://github.com/vobizofficial-cmd/vobiz-dialer-android.git
 
-# Backend
+# Android App (Personal Fork)
+git clone https://github.com/sufffeee/vobiz-dialer-android.git
+
+# Backend (Vobiz Official)
 git clone https://github.com/vobizofficial-cmd/vobiz-dialer-backend.git
+
+# Backend (Personal Fork)
+git clone https://github.com/sufffeee/vobiz-dialer-backend.git
 ```
 
 ---

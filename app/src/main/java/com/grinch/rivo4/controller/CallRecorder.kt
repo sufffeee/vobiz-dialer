@@ -152,6 +152,13 @@ object CallRecorder {
             val d = File(context.filesDir, DIRECTORY_NAME)
             if (d.exists() && d.isDirectory) dirs.add(d)
         }
+        // Add SIP recording directory (Music/Recordings)
+        runCatching {
+            context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)?.let { musicDir ->
+                val d = File(musicDir, "Recordings")
+                if (d.exists() && d.isDirectory) dirs.add(d)
+            }
+        }
         return dirs.distinctBy { it.absolutePath }
     }
 
@@ -177,7 +184,7 @@ object CallRecorder {
         // 2. Scan recording directories
         val dirs = getAllRecordingDirectories(context)
         val files = mutableListOf<File>()
-        val supportedExts = listOf(".ogg", ".opus", ".m4a", ".mp3", ".aac", ".3gp", ".wav")
+        val supportedExts = listOf(".ogg", ".opus", ".m4a", ".mp3", ".aac", ".3gp", ".wav", ".mkv")
         for (dir in dirs) {
             dir.listFiles()
                 ?.filter { file -> file.isFile && file.length() > 0 && supportedExts.any { ext -> file.name.endsWith(ext, ignoreCase = true) } }

@@ -45,6 +45,7 @@ import com.grinch.rivo4.view.components.RivoDivider
 import com.grinch.rivo4.view.components.RivoExpressiveCard
 import com.grinch.rivo4.view.components.RivoListItem
 import com.grinch.rivo4.view.components.RivoConfirmationDialog
+import com.grinch.rivo4.view.components.RivoSwitchListItem
 import com.grinch.rivo4.view.theme.RivoMaterialShapes
 import com.grinch.rivo4.view.theme.rememberRivoMorphShape
 import com.ramcosta.composedestinations.annotation.Destination
@@ -403,6 +404,16 @@ fun SettingsScreen(
                     title = RivoText.get(com.grinch.rivo4.R.string.ui_calling_behavior_338),
                     icon = Icons.Outlined.Phone
                 ) {
+                    // Record Calls Toggle
+                    var callRecordingEnabled by remember { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_CALL_RECORDING_ENABLED, true)) }
+                    RivoSwitchListItem(
+                        headline = stringResource(R.string.settings_record_calls_title),
+                        supporting = stringResource(R.string.settings_record_calls_supporting),
+                        leadingIcon = Icons.Outlined.FiberManualRecord,
+                        checked = callRecordingEnabled,
+                        onCheckedChange = { callRecordingEnabled = it; prefs.setBoolean(PreferenceManager.KEY_CALL_RECORDING_ENABLED, it) }
+                    )
+                    RivoDivider(Modifier.padding(horizontal = 16.dp))
                     RivoListItem(
                         headline = stringResource(R.string.settings_swipe_actions_title),
                         supporting = stringResource(R.string.settings_swipe_actions_supporting),

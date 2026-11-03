@@ -278,6 +278,7 @@ class PreferenceManager(context: Context) {
         const val KEY_VISIBLE_ACCOUNTS = "visible_accounts"
         const val KEY_CONTACT_SORT_ORDER = "contact_sort_order"
         const val KEY_CONTACT_DISPLAY_ORDER = "contact_display_order"
+        const val KEY_CALL_RECORDING_ENABLED = "call_recording_enabled"
         const val KEY_CALL_RECORDING = "call_recording"
         const val KEY_CALL_RECORDING_AUTO = "call_recording_auto"
         const val KEY_CALL_RECORDING_SHIZUKU = "call_recording_shizuku"

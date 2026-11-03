@@ -1,4 +1,4 @@
-﻿package com.grinch.rivo4.sip
+package com.grinch.rivo4.sip
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -6,8 +6,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
@@ -16,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import com.grinch.rivo4.R
 import com.grinch.rivo4.auth.CredentialStore
+import com.grinch.rivo4.controller.util.PreferenceManager
 import com.grinch.rivo4.modal.db.VobizCallHistory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -222,6 +225,8 @@ object SipCallController {
                         ?: _uiState.value.endedReason.ifEmpty { "Ended" }
                     _uiState.update { it.copy(active = false, state = state, endedReason = reason) }
                     recordCallLog(_uiState.value, call)
+                    // Check if recording file was created and has content
+                    checkRecordingFile(call)
                     if (currentCall == call) currentCall = null
                 } else {
                     _uiState.update { it.copy(state = state) }
@@ -265,39 +270,57 @@ object SipCallController {
             else -> "sip:$number@$outboundDomain"
         }
 
+        // Check if call recording is enabled
+        val prefs = context.createDeviceProtectedStorageContext().getSharedPreferences("rivo_prefs", Context.MODE_PRIVATE)
+        val isRecordingEnabled = prefs.getBoolean(PreferenceManager.KEY_CALL_RECORDING, true)
+
+        // Variables need to be declared at function level for proper scoping
+        var recordPath = ""
+        var params = core.createCallParams(null) ?: runCatching { core.createCallParams(null) }.getOrNull()
+        var armed = false
+
         return try {
             lastRecordingPath = ""
-            recordPending = false
-            val recordPath = newRecordFilePath(context)
-            val params = runCatching { core.createCallParams(null) }.getOrNull()
-            var armed = false
-            if (params != null) {
-                runCatching {
-                    params.setVideoEnabled(false)
-                    if (recordPath.isNotEmpty()) {
-                        params.setRecordFile(recordPath)
-                        armed = true
-                    }
-                    if (fromUser != null) {
-                        val fromHeaderVal = "<sip:$fromUser@$outboundDomain>"
-                        runCatching {
-                            params.setFromHeader(fromHeaderVal)
-                            Log.i(TAG, "Applied setFromHeader: $fromHeaderVal")
-                        }.onFailure {
-                            Log.w(TAG, "setFromHeader failed, applying P-Preferred-Identity fallback", it)
+
+            if (isRecordingEnabled) {
+                recordPending = true  // Auto-start recording when streams run
+                recordPath = newRecordFilePath(context)
+                if (params != null) {
+                    runCatching {
+                        params.setVideoEnabled(false)
+                        if (recordPath.isNotEmpty()) {
+                            params.setRecordFile(recordPath)
+                            armed = true
                         }
-                    }
-                    if (effectiveCallerId != null) {
-                        runCatching {
-                            params.addCustomHeader(
-                                "P-Preferred-Identity",
-                                "<sip:$effectiveCallerId@$outboundDomain>"
-                            )
-                            Log.i(TAG, "Applied P-Preferred-Identity header for $effectiveCallerId")
+                        if (fromUser != null) {
+                            val fromHeaderVal = "<sip:$fromUser@$outboundDomain>"
+                            runCatching {
+                                params.setFromHeader(fromHeaderVal)
+                                Log.i(TAG, "Applied setFromHeader: $fromHeaderVal")
+                            }.onFailure {
+                                Log.w(TAG, "setFromHeader failed, applying P-Preferred-Identity fallback", it)
+                            }
                         }
-                    }
-                }.onFailure { Log.w(TAG, "Failed to arm call params / caller ID", it) }
+                        if (effectiveCallerId != null) {
+                            runCatching {
+                                params.addCustomHeader(
+                                    "P-Preferred-Identity",
+                                    "<sip:$effectiveCallerId@$outboundDomain>"
+                                )
+                                Log.i(TAG, "Applied P-Preferred-Identity header for $effectiveCallerId")
+                            }
+                        }
+                    }.onFailure { Log.w(TAG, "Failed to arm call params / caller ID", it) }
+                }
+            } else {
+                Log.i(TAG, "Call recording disabled by user preference")
+                if (params != null) {
+                    runCatching {
+                        params.setVideoEnabled(false)
+                    }.onFailure { Log.w(TAG, "Failed to set video enabled", it) }
+                }
             }
+
             val call = if (params != null) core.inviteWithParams(target, params) else core.invite(target)
             if (call == null) {
                 Log.w(TAG, "invite returned null for $target")
@@ -357,7 +380,19 @@ object SipCallController {
                 return
             }
             Log.i(TAG, "Accepting incoming call")
-            val recordPath = newRecordFilePath(context)
+            
+            // Check if call recording is enabled
+            val prefs = context.createDeviceProtectedStorageContext().getSharedPreferences("rivo_prefs", Context.MODE_PRIVATE)
+            val isRecordingEnabled = prefs.getBoolean(PreferenceManager.KEY_CALL_RECORDING, true)
+            
+            var recordPath = ""
+            if (isRecordingEnabled) {
+                recordPath = newRecordFilePath(context)
+                recordPending = true  // Auto-start recording when streams run
+            } else {
+                Log.i(TAG, "Call recording disabled by user preference")
+            }
+            
             val params = runCatching { LinphoneService.core?.createCallParams(call) }.getOrNull()
             var armed = false
             if (params != null) {
@@ -446,6 +481,23 @@ object SipCallController {
             Log.i(TAG, "Vobiz history recorded: status=$status callId=$callId recordingPath=${recPath.ifEmpty { "<none>" }}")
         }.onFailure { t ->
             Log.w(TAG, "Vobiz history insert failed", t)
+        }
+    }
+
+    /** Checks if the recording file was created successfully and has content. */
+    private fun checkRecordingFile(call: Call) {
+        if (lastRecordingPath.isNotEmpty()) {
+            val file = java.io.File(lastRecordingPath)
+            if (file.exists() && file.length() > 0) {
+                Log.i(TAG, "Recording saved successfully: ${file.absolutePath} (${file.length()} bytes)")
+                // TODO: Insert recording metadata into database for cloud sync (Phase 2)
+            } else {
+                Log.w(TAG, "Recording file missing or empty: $lastRecordingPath")
+                // Clean up empty file if it exists
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
         }
     }
 
@@ -558,11 +610,9 @@ object SipCallController {
     }
 
     private fun newRecordFilePath(context: Context): String = try {
-        val dir = java.io.File(
-            context.getExternalFilesDir(null) ?: context.filesDir,
-            "recordings",
-        ).apply { mkdirs() }
-        java.io.File(dir, "vobiz_call_${System.currentTimeMillis()}.mkv").absolutePath
+        val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC) ?: context.getExternalFilesDir(null) ?: context.filesDir
+        val dir = java.io.File(baseDir, "Recordings").apply { mkdirs() }
+        java.io.File(dir, "vobiz_call_${System.currentTimeMillis()}.wav").absolutePath
     } catch (t: Throwable) {
         Log.w(TAG, "Failed to create record path", t)
         ""
@@ -750,3 +800,4 @@ object SipCallController {
         }
     }
 }
+
