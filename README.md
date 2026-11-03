@@ -285,9 +285,9 @@ See [docs/VOBIZ_SUPPORT_TICKET.md](docs/VOBIZ_SUPPORT_TICKET.md) for platform-si
 ## Repositories
 
 - **Android (Vobiz Official)**: https://github.com/vobizofficial-cmd/vobiz-dialer-android
-- **Android (Personal Fork)**: https://github.com/sufffeee/vobiz-dialer-android
+- **Android (Personal Fork)**: https://github.com/sufffeee/vobiz-dialer
 - **Backend (Vobiz Official)**: https://github.com/vobizofficial-cmd/vobiz-dialer-backend
-- **Backend (Personal Fork)**: https://github.com/sufffeee/vobiz-dialer-backend
+- **Backend (Personal Fork)**: https://github.com/sufffeee/vobiz_node_backend
 
 ## License
 

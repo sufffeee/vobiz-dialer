@@ -75,13 +75,13 @@ This guide documents the **entire end-to-end setup** for the Vobiz Dialer projec
 git clone https://github.com/vobizofficial-cmd/vobiz-dialer-android.git
 
 # Android App (Personal Fork)
-git clone https://github.com/sufffeee/vobiz-dialer-android.git
+git clone https://github.com/sufffeee/vobiz-dialer.git
 
 # Backend (Vobiz Official)
 git clone https://github.com/vobizofficial-cmd/vobiz-dialer-backend.git
 
 # Backend (Personal Fork)
-git clone https://github.com/sufffeee/vobiz-dialer-backend.git
+git clone https://github.com/sufffeee/vobiz_node_backend.git
 ```
 
 ---

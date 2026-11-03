@@ -3,7 +3,7 @@
 **Project:** Native Android SIP dialer for Vobiz telephony with inbound/outbound PSTN calling
 **Repo:** D:\SohaiL\Vobiz\Dialer\vobiz-dialer
 **GitHub (Vobiz Official):** https://github.com/vobizofficial-cmd/vobiz-dialer-android
-**GitHub (Personal Fork):** https://github.com/sufffeee/vobiz-dialer-android
+**GitHub (Personal Fork):** https://github.com/sufffeee/vobiz-dialer
 **Last Updated:** 2026-10-04
 
 ## Read in This Order
